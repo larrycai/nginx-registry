@@ -21,5 +21,7 @@ RUN apt-get -y install apache2-utils
 ADD . /app
 RUN chmod +x /app/start.sh
 
+VOLUME ["/data"]
+
 EXPOSE 80 443
 CMD /app/start.sh

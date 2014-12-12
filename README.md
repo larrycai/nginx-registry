@@ -29,6 +29,11 @@ Then you can start two docker containers to try
     $ docker run -d --name registry -p 5000:5000 registry
 	$ docker run -d --name nginx --link registry:registry -p 443:443 larrycai/nginx-registry
 	
+It recommend to put `docker-registry.htpasswd`,`server.crt`,`server.key` put local directory like `/registry-key` and passed via tag `volume`
+
+    $ docker run -d --name registry -p 5000:5000 registry
+	$ docker run -d --name nginx -v /registry-key:/data --link registry:registry -p 443:443 larrycai/nginx-registry	
+	
 # verify #
 
 open browser to access https://192.168.59.103 , it shall show the nginx https works fine.
