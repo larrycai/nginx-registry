@@ -8,8 +8,9 @@ cp /app/nginx/docker-registry.default ${NGINX}/conf/docker-registry.default
 
 if [ -d ${DATA} ];
 then
-    echo "use default for demo purpose !!"
+    echo "welcome to nginx-registry"
 else
+    echo "use default for demo purpose !!"
 	mkdir -p ${DATA}
 	mkdir -p /conf
 	cp /app/nginx/server.crt ${DATA}/
