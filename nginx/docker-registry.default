@@ -44,13 +44,13 @@ server {
   
   location / {
     auth_basic            "Restricted";
-    auth_basic_user_file  /data/docker-registry.htpasswd;  # testuser:testpasswd & larrycai:passwd
+    auth_basic_user_file  docker-registry.htpasswd;  # testuser:testpasswd & larrycai:passwd
     proxy_pass                http://docker-registry;
   }
 
   location /auth {
     auth_basic            "Restricted";
-    auth_basic_user_file  /data/docker-registry.htpasswd;  # testuser:testpasswd & larrycai:passwd
+    auth_basic_user_file  docker-registry.htpasswd;  # testuser:testpasswd & larrycai:passwd
     proxy_pass                http://docker-registry;
   }
   
