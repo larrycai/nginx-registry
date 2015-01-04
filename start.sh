@@ -6,17 +6,20 @@ DATA=/data
 cp /app/nginx/nginx.conf ${NGINX}/conf/nginx.conf
 cp /app/nginx/docker-registry.default ${NGINX}/conf/docker-registry.default
 
-if [ -d ${DATA} ];
+if [ ! -f ${DATA}/server.crt ];
 then
-    echo "welcome to nginx-registry"
-	cp /data/docker-registry.htpasswd ${NGINX}/conf
-else
-    echo "use default for demo purpose !!"
+    echo "use default server certification for demo purpose !!"
 	mkdir -p ${DATA}
 	mkdir -p /conf
 	cp /app/nginx/server.crt ${DATA}/
 	cp /app/nginx/server.key ${DATA}/
 	cp /app/nginx/docker-registry.htpasswd ${NGINX}/conf
+fi
+
+if [ ! -f ${DATA}/docker-registry.htpasswd ];
+then
+    echo "use default htpasswd for demo purpose !!"
+    cp /app/nginx/docker-registry.htpasswd ${DATA}
 fi
 
 ${NGINX}/sbin/nginx
