@@ -10,62 +10,56 @@ server {
 
 
 server {
-  listen 443;
-  error_page 588 = @readrequests;
+    # https://github.com/docker/docker-/issues/747#issuecomment-64957116
+    listen 443;
   
-  ssl on;
-  ssl_certificate /data/server.crt;
-  ssl_certificate_key /data/server.key;
-
-  proxy_set_header X-Forwarded-Proto $scheme;
-  proxy_set_header  Host           $http_host;   # required for docker client's sake
-  proxy_set_header  X-Real-IP      $remote_addr; # pass on real client's IP
-  proxy_set_header  Authorization  ""; # see https://github.com/dotcloud/docker-registry/issues/170
-  proxy_read_timeout               900;
-
-  client_max_body_size 0;                  # disable any limits to avoid HTTP 413 for large image uploads
-  chunked_transfer_encoding on;            # required to avoid HTTP 411: see Issue #1486 (https://github.com/dotcloud/docker/issues/1486)
-
-  root  /usr/local/nginx/html;
-  index  index.html index.htm;
-
-  # https://github.com/docker/docker-registry/issues/747#issuecomment-64957116
-  if ($request_method = 'GET') {
-    return 588;
-  }
-
-  if ($request_method = 'HEAD') {
-    return 588;
-  }
-
-  if ($request_method = 'OPTIONS') {
-    return 588;
-  }
+	ssl on;
+    ssl_certificate /data/server.crt;
+    ssl_certificate_key /data/server.key;
   
-  location / {
-    auth_basic            "Restricted";
-    auth_basic_user_file  /data/docker-registry.htpasswd;  # testuser:testpasswd & larrycai:passwd
-    proxy_pass                http://docker-registry;
-  }
+    location / {
+		limit_except GET HEAD OPTIONS {
+			auth_basic            "Restricted";
+			auth_basic_user_file  /data/docker-registry.htpasswd;  # testuser:testpasswd & larrycai:passwd
+		}
+		proxy_set_header X-Forwarded-Proto $scheme;
+		proxy_set_header Host $http_host;
+		proxy_set_header X-Real-IP $remote_addr;
+		client_max_body_size 800M; # avoid HTTP 413 for large image uploads
+		chunked_transfer_encoding on; # required to avoid HTTP 411: see Issue #1486 (https://github.com/dotcloud/docker/issues/1486)
+		proxy_pass     http://docker-registry;
+    }
+}
 
-  location /auth {
-    auth_basic            "Restricted";
-    auth_basic_user_file  /data/docker-registry.htpasswd;  # testuser:testpasswd & larrycai:passwd
-    proxy_pass                http://docker-registry;
-  }
+# LDAP http://www.allgoodbits.org/articles/view/29 
+	
+ldap_server ldap1 {
+   url ldap://ldap:389/ou=Users,dc=openstack,dc=org?uid?sub?(objectClass=inetOrgPerson);
+   #binddn "TEST\\LDAPUSER";
+   #binddn_passwd LDAPPASSWORD;
+   group_attribute uniquemember;
+   group_attribute_is_dn on;
+   require valid_user;
+}
+
+server {
+    listen       3443;
+
+	ssl on;
+    ssl_certificate /data/server.crt;
+    ssl_certificate_key /data/server.key;
   
-  location /v1/_ping {
-    auth_basic off;
-    proxy_pass                http://docker-registry;
-  }
-
-  location /_ping {
-    auth_basic off;
-    proxy_pass                http://docker-registry;
-  }
-  
-  location @readrequests {
-    proxy_pass 				http://docker-registry;
-  }
-
+    location / {
+		limit_except GET HEAD OPTIONS {
+			auth_ldap "LDAP Authorization Request";
+			auth_ldap_servers ldap1;
+			# auth_ldap_servers ldap2;
+		}
+		proxy_set_header X-Forwarded-Proto $scheme;
+		proxy_set_header Host $http_host;
+		proxy_set_header X-Real-IP $remote_addr;
+		client_max_body_size 800M; # avoid HTTP 413 for large image uploads
+		chunked_transfer_encoding on; # required to avoid HTTP 411: see Issue #1486 (https://github.com/dotcloud/docker/issues/1486)
+		proxy_pass     http://docker-registry;
+    }
 }
